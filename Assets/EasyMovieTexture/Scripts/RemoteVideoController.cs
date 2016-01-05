@@ -5,14 +5,17 @@ using System.Net;
 using JsonFx.Json;
 using System;
 using AssemblyCSharp;
+using System.Collections.Generic;
 
 public class RemoteVideoController : MonoBehaviour {
 
-    public MediaPlayerCtrl scrMedia;
+	public MediaPlayerCtrl scrMedia;
+	private List<VRAction> actions;
     
     // Use this for initialization
     void Start()
     {
+		actions = new List<VRAction> ();
 		fetchActionInterval ();
         /*
         scrMedia.Load("http://martindrost.nl/rock360.mp4");
@@ -26,67 +29,16 @@ public class RemoteVideoController : MonoBehaviour {
 	int lastProcessedAction = 0;
 	void fetchActionInterval()
 	{
-		scrMedia.Load("http://martindrost.nl/rock360.mp4");
 		new Thread((ThreadStart)delegate()
 		{
 			while(true)
 			{
-					continue;
 					string data = new WebClient().DownloadString("http://martindrost.nl/vr/getActions?id=" + lastProcessedAction);
-					VRAction[] actions = JsonReader.Deserialize<VRAction[]>(data);
+					VRAction[] receivedActions = JsonReader.Deserialize<VRAction[]>(data);
 					
-					foreach(VRAction action in actions)
+					foreach(VRAction action in receivedActions)
 					{
-						Debug.Log("New action: " + action.action);
-						DateTime targetDate = Convert.ToDateTime(action.time);
-						DateTime currentDate = DateTime.Now;
-
-						int timeout = 0;
-						if(targetDate > currentDate)
-						{
-							TimeSpan timeSpan = targetDate - currentDate;
-							timeout = (int) timeSpan.TotalMilliseconds;
-						}
-
-						switch(action.action)
-						{
-							case "load":
-								new Thread((ThreadStart)delegate()
-								{
-									Thread.Sleep(timeout);
-									scrMedia.Load(action.details);
-								}).Start();
-								break;
-							case"play":
-								new Thread((ThreadStart)delegate()
-								{
-									Thread.Sleep(timeout);
-									scrMedia.Play();
-								}).Start();
-								break;
-							case"pause":
-								new Thread((ThreadStart)delegate()
-								{
-									Thread.Sleep(timeout);
-									scrMedia.Pause();
-								}).Start();
-								break;
-							case"stop":
-								new Thread((ThreadStart)delegate()
-								{
-									Thread.Sleep(timeout);
-									scrMedia.Stop();
-								});
-								break;
-							case "seek":
-								new Thread((ThreadStart)delegate()
-								{
-									Thread.Sleep(timeout);
-									scrMedia.SeekTo(Int32.Parse(action.details));
-								}).Start();
-								break;
-						}
-
+						actions.Add(action);
 						lastProcessedAction = Int32.Parse(action.id);
 					}
 
@@ -97,7 +49,44 @@ public class RemoteVideoController : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
+		for(int i = 0; i < actions.Count; i++)
+		{
+			VRAction action = actions [i];
 
+			DateTime targetDate = Convert.ToDateTime(action.time);
+			DateTime currentDate = DateTime.Now;
+
+			int timeout = 0;
+			if(targetDate > currentDate)
+			{
+				TimeSpan timeSpan = targetDate - currentDate;
+				timeout = (int) timeSpan.TotalMilliseconds;
+			}
+
+			if (timeout != 0)
+				continue;
+			
+			switch(action.action)
+			{
+				case "load":
+					scrMedia.Load(action.details);
+					break;
+				case"play":
+					scrMedia.Play();
+					break;
+				case"pause":
+					scrMedia.Pause();
+					break;
+				case"stop":
+					scrMedia.Stop();
+					break;
+				case "seek":
+					scrMedia.SeekTo(Int32.Parse(action.details));
+					break;
+			}
+			actions.RemoveAt (i);
+			i--;
+		}
     }
 
     void OnGUI()
