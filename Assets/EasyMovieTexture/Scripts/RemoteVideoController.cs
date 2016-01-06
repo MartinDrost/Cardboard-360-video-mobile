@@ -11,10 +11,12 @@ public class RemoteVideoController : MonoBehaviour {
 
 	public MediaPlayerCtrl scrMedia;
 	private List<VRAction> actions;
+	private bool playVideo;
     
     // Use this for initialization
     void Start()
     {
+		playVideo = false;
 		actions = new List<VRAction> ();
 		fetchActionInterval ();
         /*
@@ -72,7 +74,7 @@ public class RemoteVideoController : MonoBehaviour {
 					scrMedia.Load(action.details);
 					break;
 				case"play":
-					scrMedia.Play();
+					playVideo = true;
 					break;
 				case"pause":
 					scrMedia.Pause();
@@ -87,10 +89,15 @@ public class RemoteVideoController : MonoBehaviour {
 			actions.RemoveAt (i);
 			i--;
 		}
+
+		if (playVideo && scrMedia.GetCurrentState() != MediaPlayerCtrl.MEDIAPLAYER_STATE.NOT_READY) {
+			scrMedia.Play ();
+			playVideo = false;
+		}
     }
 
     void OnGUI()
     {
-        GUI.Label(new Rect(new Vector2(0, 0), new Vector2(Screen.width, Screen.height)), " url's called");
+        //GUI.Label(new Rect(new Vector2(0, 0), new Vector2(Screen.width, Screen.height)), " url's called");
 	}
 }
