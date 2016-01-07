@@ -508,8 +508,18 @@ public class MediaPlayerCtrl : MonoBehaviour {
 	{
 		return m_VideoTexture;
 	}
-	
-	public void Play()
+
+
+    public void Play(int seek)
+    {
+        if (m_bStop == true || m_CurrentState == MEDIAPLAYER_STATE.PAUSED || m_CurrentState == MEDIAPLAYER_STATE.READY || m_CurrentState == MEDIAPLAYER_STATE.STOPPED || m_CurrentState == MEDIAPLAYER_STATE.END)
+        {
+            Call_Play(seek);
+            m_bStop = false;
+        }
+    }
+
+    public void Play()
 	{
 		if(m_bStop == true)
 		{

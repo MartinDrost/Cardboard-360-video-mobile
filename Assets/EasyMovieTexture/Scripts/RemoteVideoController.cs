@@ -12,12 +12,17 @@ public class RemoteVideoController : MonoBehaviour {
 	public MediaPlayerCtrl scrMedia;
 	private List<VRAction> actions;
 	private bool playVideo;
-    
+    private bool loadVideo;
+    private int correctFramesCountdown;
+    private GUIStyle guiStyle = new GUIStyle();
+
     // Use this for initialization
     void Start()
     {
-		playVideo = false;
-		actions = new List<VRAction> ();
+        correctFramesCountdown = -1;
+        playVideo = false;
+        loadVideo = false;
+        actions = new List<VRAction> ();
 		fetchActionInterval ();
         /*
         scrMedia.Load("http://martindrost.nl/rock360.mp4");
@@ -72,6 +77,7 @@ public class RemoteVideoController : MonoBehaviour {
 			{
 				case "load":
 					scrMedia.Load(action.details);
+                    loadVideo = true;
 					break;
 				case"play":
 					playVideo = true;
@@ -90,14 +96,47 @@ public class RemoteVideoController : MonoBehaviour {
 			i--;
 		}
 
-		if (playVideo && scrMedia.GetCurrentState() != MediaPlayerCtrl.MEDIAPLAYER_STATE.NOT_READY) {
-			scrMedia.Play ();
-			playVideo = false;
-		}
+		if (scrMedia.GetCurrentState() != MediaPlayerCtrl.MEDIAPLAYER_STATE.NOT_READY) {
+            if (loadVideo)
+            {
+                if (scrMedia.GetCurrentState() == MediaPlayerCtrl.MEDIAPLAYER_STATE.PLAYING && scrMedia.GetSeekPosition() > 10)
+                {
+                    scrMedia.Pause();
+                }
+                else if (scrMedia.GetCurrentState() == MediaPlayerCtrl.MEDIAPLAYER_STATE.PAUSED)
+                {
+                    loadVideo = false;
+                }
+            }
+            else if (playVideo)
+            {
+                scrMedia.Play(0);
+                playVideo = false;
+                correctFramesCountdown = 50;
+            }
+            if(correctFramesCountdown > 0)
+            {
+                correctFramesCountdown--;
+            }
+            else if(correctFramesCountdown == 0)
+            {
+                scrMedia.SeekTo(100);
+                correctFramesCountdown = -1;
+            }
+        }
     }
 
     void OnGUI()
     {
-        //GUI.Label(new Rect(new Vector2(0, 0), new Vector2(Screen.width, Screen.height)), " url's called");
-	}
+        guiStyle.fontSize = 24;
+        guiStyle.normal.textColor = Color.green;
+        GUI.Label(new Rect(new Vector2(0, Screen.height-40), new Vector2(Screen.width, Screen.height)), scrMedia.GetSeekPosition() + " ms played", guiStyle);
+
+        DateTime currentDate = DateTime.Now;
+        GUI.Label(new Rect(new Vector2(0, Screen.height-80), new Vector2(Screen.width, Screen.height)), currentDate.Hour + ":" + currentDate.Minute + ":" + currentDate.Second, guiStyle);
+
+        GUI.Label(new Rect(new Vector2(0, Screen.height - 120), new Vector2(Screen.width, Screen.height)), "Status: " + scrMedia.GetCurrentState(), guiStyle);
+
+        GUI.Label(new Rect(new Vector2(0, Screen.height - 160), new Vector2(Screen.width, Screen.height)), "correctFramesCountdown: " + correctFramesCountdown, guiStyle);
+    }
 }
