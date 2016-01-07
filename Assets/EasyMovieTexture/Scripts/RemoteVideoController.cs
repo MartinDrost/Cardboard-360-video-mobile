@@ -128,6 +128,8 @@ public class RemoteVideoController : MonoBehaviour {
 
     void OnGUI()
     {
+        return;
+
         guiStyle.fontSize = 24;
         guiStyle.normal.textColor = Color.green;
         GUI.Label(new Rect(new Vector2(0, Screen.height-40), new Vector2(Screen.width, Screen.height)), scrMedia.GetSeekPosition() + " ms played", guiStyle);
