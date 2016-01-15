@@ -6,6 +6,7 @@ using JsonFx.Json;
 using System;
 using AssemblyCSharp;
 using System.Collections.Generic;
+using System.Linq;
 
 public class RemoteVideoController : MonoBehaviour {
 
@@ -13,40 +14,34 @@ public class RemoteVideoController : MonoBehaviour {
 	private List<VRAction> actions;
 	private bool playVideo;
     private bool loadVideo;
-    private int correctFramesCountdown;
     private GUIStyle guiStyle = new GUIStyle();
+    List<int> processedActions;
 
     // Use this for initialization
     void Start()
     {
-        correctFramesCountdown = -1;
         playVideo = false;
         loadVideo = false;
         actions = new List<VRAction> ();
-		fetchActionInterval ();
-        /*
-        scrMedia.Load("http://martindrost.nl/rock360.mp4");
-        scrMedia.Play();
-        scrMedia.Stop();
-        scrMedia.Pause();
-        scrMedia.UnLoad();
-        */
+        processedActions = new List<int>();
+        processedActions.Add(0);
+        fetchActionInterval ();
     }
 
-	int lastProcessedAction = 0;
+     
 	void fetchActionInterval()
 	{
 		new Thread((ThreadStart)delegate()
 		{
 			while(true)
 			{
-					string data = new WebClient().DownloadString("http://martindrost.nl/vr/getActions?id=" + lastProcessedAction);
+					string data = new WebClient().DownloadString("http://martindrost.nl/vr/getActions?id=" + string.Join(",", processedActions.Select(x => x.ToString()).ToArray()));
 					VRAction[] receivedActions = JsonReader.Deserialize<VRAction[]>(data);
 					
 					foreach(VRAction action in receivedActions)
 					{
 						actions.Add(action);
-						lastProcessedAction = Int32.Parse(action.id);
+                        processedActions.Add(Int32.Parse(action.id));
 					}
 
 					Thread.Sleep(5000);
@@ -112,16 +107,6 @@ public class RemoteVideoController : MonoBehaviour {
             {
                 scrMedia.Play(0);
                 playVideo = false;
-                correctFramesCountdown = 50;
-            }
-            if(correctFramesCountdown > 0)
-            {
-                correctFramesCountdown--;
-            }
-            else if(correctFramesCountdown == 0)
-            {
-                scrMedia.SeekTo(100);
-                correctFramesCountdown = -1;
             }
         }
     }
@@ -138,7 +123,6 @@ public class RemoteVideoController : MonoBehaviour {
         GUI.Label(new Rect(new Vector2(0, Screen.height-80), new Vector2(Screen.width, Screen.height)), currentDate.Hour + ":" + currentDate.Minute + ":" + currentDate.Second, guiStyle);
 
         GUI.Label(new Rect(new Vector2(0, Screen.height - 120), new Vector2(Screen.width, Screen.height)), "Status: " + scrMedia.GetCurrentState(), guiStyle);
-
-        GUI.Label(new Rect(new Vector2(0, Screen.height - 160), new Vector2(Screen.width, Screen.height)), "correctFramesCountdown: " + correctFramesCountdown, guiStyle);
+        
     }
 }
